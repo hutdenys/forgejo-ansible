@@ -1,0 +1,31 @@
+---
+- name: Download Nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Copy forgejo template for Nginx
+  template:
+    src: forgejo.j2
+    dest: /etc/nginx/sites-available/forgejo
+    mode: '0644'
+  notify: Reload Nginx
+
+- name: Enable forgejo site
+  file:
+    src: /etc/nginx/sites-available/forgejo
+    dest: /etc/nginx/sites-enabled/forgejo
+    state: link
+    force: yes
+
+- name: Remove default site
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+
+- name: Start Nginx
+  service:
+    name: nginx
+    state: started
+    enabled: yes

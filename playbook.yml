@@ -9,3 +9,9 @@
   become: yes
   roles:
     - forgejo
+
+- name: Configure Forgejo App
+  hosts: forgejo
+  become: yes
+  roles:
+    - nginx
