@@ -1,0 +1,11 @@
+- name: Configure Forgejo DB
+  hosts: db
+  become: yes
+  roles:
+    - db
+
+- name: Configure Forgejo App
+  hosts: forgejo
+  become: yes
+  roles:
+    - forgejo

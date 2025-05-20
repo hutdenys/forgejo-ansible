@@ -1,0 +1,14 @@
+[Unit]
+Description=Forgejo self-hosted Git service
+After=network.target mariadb.service
+
+[Service]
+User=forgejo
+Group=forgejo
+WorkingDirectory=/opt/forgejo
+ExecStart=/opt/forgejo/forgejo web
+Restart=always
+Environment=USER=forgejo HOME=/home/forgejo
+
+[Install]
+WantedBy=multi-user.target

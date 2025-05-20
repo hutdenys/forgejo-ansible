@@ -1,0 +1,4 @@
+forgejo_domain: forgejo.local
+db_host: 192.168.56.102
+db_password: supersecret
+forgejo_secret_key: somereallylongsecret

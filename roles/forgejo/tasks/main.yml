@@ -1,0 +1,113 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Install required packages
+  apt:
+    name:
+      - git
+      - wget
+      - curl
+      - build-essential
+    state: present
+
+- name: Create forgejo system user
+  user:
+    name: forgejo
+    home: /home/forgejo
+    shell: /bin/bash
+    system: yes
+    create_home: yes
+
+- name: Install Go from archive
+  unarchive:
+    src: https://go.dev/dl/go1.22.2.linux-amd64.tar.gz
+    dest: /usr/local
+    remote_src: yes
+    creates: /usr/local/go
+
+- name: Make Go available globally for vagrant user
+  copy:
+    content: |
+      export PATH=$PATH:/usr/local/go/bin
+    dest: /etc/profile.d/go.sh
+    mode: '0644'
+
+- name: Download Node.js setup script
+  get_url:
+    url: https://deb.nodesource.com/setup_22.x
+    dest: /tmp/nodesource_setup.sh
+    mode: '0755'
+
+- name: Run Node.js setup script
+  command: bash /tmp/nodesource_setup.sh
+
+- name: Install Node.js
+  apt:
+    name: nodejs
+    state: present
+
+- name: Add /opt/forgejo to Git safe directories
+  command: git config --global --add safe.directory /opt/forgejo
+
+- name: Clone Forgejo repository
+  git:
+    repo: https://codeberg.org/forgejo/forgejo.git
+    dest: /opt/forgejo
+    version: forgejo
+    update: yes
+
+- name: Build Forgejo with make
+  make:
+    chdir: /opt/forgejo
+    target: build
+  environment:
+    PATH: "{{ ansible_env.PATH }}:/usr/local/go/bin"
+
+- name: Rename gitea to forgejo after build
+  command: mv /opt/forgejo/gitea /opt/forgejo/forgejo
+  args:
+    removes: /opt/forgejo/gitea
+    creates: /opt/forgejo/forgejo
+
+- name: Create config directory
+  file:
+    path: /var/lib/forgejo/custom/conf
+    state: directory
+    recurse: yes
+
+- name: Copy app.ini
+  template:
+    src: app.ini.j2
+    dest: /var/lib/forgejo/custom/conf/app.ini
+    mode: '0640'
+
+- name: Ensure proper ownership for /opt/forgejo
+  file:
+    path: /opt/forgejo
+    state: directory
+    recurse: yes
+    owner: forgejo
+    group: forgejo
+
+- name: Ensure proper ownership for /var/lib/forgejo
+  file:
+    path: /var/lib/forgejo
+    state: directory
+    recurse: yes
+    owner: forgejo
+    group: forgejo
+
+- name: Copy Forgejo systemd service
+  copy:
+    src: forgejo.service
+    dest: /etc/systemd/system/forgejo.service
+    mode: '0644'
+
+- name: Reload and start Forgejo service
+  systemd:
+    daemon_reload: yes
+    name: forgejo
+    enabled: yes
+    state: started
