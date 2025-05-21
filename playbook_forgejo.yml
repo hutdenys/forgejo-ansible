@@ -1,0 +1,5 @@
+- name: Configure Forgejo App
+  hosts: forgejo
+  become: yes
+  roles:
+    - forgejo

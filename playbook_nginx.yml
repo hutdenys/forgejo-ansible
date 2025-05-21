@@ -1,0 +1,5 @@
+- name: Configure Nginx App
+  hosts: nginx
+  become: yes
+  roles:
+    - nginx

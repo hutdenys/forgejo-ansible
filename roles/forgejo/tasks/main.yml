@@ -7,97 +7,68 @@
   apt:
     name:
       - git
-      - wget
-      - curl
-      - build-essential
     state: present
 
 - name: Create forgejo system user
   user:
-    name: forgejo
-    home: /home/forgejo
+    name: git
+    home: /home/git
     shell: /bin/bash
     system: yes
     create_home: yes
 
-- name: Install Go from archive
-  unarchive:
-    src: https://go.dev/dl/go1.22.2.linux-amd64.tar.gz
-    dest: /usr/local
-    remote_src: yes
-    creates: /usr/local/go
+- name: Ensure /var/lib/forgejo directory exists
+  file:
+    path: /var/lib/forgejo
+    state: directory
+    owner: git
+    group: git
+    mode: '0750'
 
-- name: Make Go available globally for vagrant user
-  copy:
-    content: |
-      export PATH=$PATH:/usr/local/go/bin
-    dest: /etc/profile.d/go.sh
-    mode: '0644'
+- name: Ensure /var/lib/forgejo directory exists
+  file:
+    path: /etc/forgejo
+    state: directory
+    owner: root
+    group: git
+    mode: '0770'
 
-- name: Download Node.js setup script
+- name: Download Forgejo source archive from GitHub
   get_url:
-    url: https://deb.nodesource.com/setup_22.x
-    dest: /tmp/nodesource_setup.sh
+    url: https://codeberg.org/forgejo/forgejo/releases/download/v11.0.1/forgejo-src-11.0.1.tar.gz
+    dest: /tmp/forgejo-src.tar.gz
+
+- name: Extract archive to /opt/
+  unarchive:
+    src: /tmp/forgejo-src.tar.gz
+    dest: /opt/
+    remote_src: yes
+
+- name: Rename extracted folder to /opt/forgejo
+  command: mv /opt/forgejo-src-11.0.1 /opt/forgejo
+  args:
+    creates: /opt/forgejo
+
+- name: Download Forgejo release
+  get_url:
+    url: "https://codeberg.org/forgejo/forgejo/releases/download/v11.0.1/forgejo-11.0.1-linux-amd64"
+    dest: /opt/forgejo/forgejo
     mode: '0755'
 
-- name: Run Node.js setup script
-  command: bash /tmp/nodesource_setup.sh
-
-- name: Install Node.js
-  apt:
-    name: nodejs
-    state: present
-
-- name: Add /opt/forgejo to Git safe directories
-  command: git config --global --add safe.directory /opt/forgejo
-
-- name: Clone Forgejo repository
-  git:
-    repo: https://codeberg.org/forgejo/forgejo.git
-    dest: /opt/forgejo
-    version: forgejo
-    update: yes
-
-- name: Build Forgejo with make
-  make:
-    chdir: /opt/forgejo
-    target: build
-  environment:
-    PATH: "{{ ansible_env.PATH }}:/usr/local/go/bin"
-
-- name: Rename gitea to forgejo after build
-  command: mv /opt/forgejo/gitea /opt/forgejo/forgejo
-  args:
-    removes: /opt/forgejo/gitea
-    creates: /opt/forgejo/forgejo
-
-- name: Create config directory
+- name: Create symlink to forgejo binary
   file:
-    path: /var/lib/forgejo/custom/conf
-    state: directory
-    recurse: yes
+    src: /opt/forgejo/forgejo
+    dest: /usr/local/bin/forgejo
+    state: link
+    force: yes
 
-- name: Copy app.ini
-  template:
-    src: app.ini.j2
-    dest: /var/lib/forgejo/custom/conf/app.ini
-    mode: '0640'
-
-- name: Ensure proper ownership for /opt/forgejo
+- name: Ensure /opt/forgejo is owned by git
   file:
     path: /opt/forgejo
     state: directory
     recurse: yes
-    owner: forgejo
-    group: forgejo
-
-- name: Ensure proper ownership for /var/lib/forgejo
-  file:
-    path: /var/lib/forgejo
-    state: directory
-    recurse: yes
-    owner: forgejo
-    group: forgejo
+    owner: git
+    group: git
 
 - name: Copy Forgejo systemd service
   copy:
