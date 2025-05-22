@@ -25,7 +25,7 @@
     group: git
     mode: '0750'
 
-- name: Ensure /var/lib/forgejo directory exists
+- name: Ensure /etc/forgejo directory exists
   file:
     path: /etc/forgejo
     state: directory
@@ -69,6 +69,14 @@
     recurse: yes
     owner: git
     group: git
+
+- name: Copy app.ini on Forgejo ВМ
+  template:
+    src: app.ini.j2
+    dest: /etc/forgejo/app.ini
+    owner: git
+    group: git
+    mode: '0644'
 
 - name: Copy Forgejo systemd service
   copy:
