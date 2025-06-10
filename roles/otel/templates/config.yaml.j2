@@ -1,0 +1,22 @@
+receivers:
+  hostmetrics:
+    collection_interval: 10s
+    scrapers:
+      cpu:
+      memory:
+      disk:
+      filesystem:
+
+exporters:
+  splunk_hec:
+    token: {{ splunk_hec_token }}
+    endpoint: "https://{{ splunk_indexer_ip }}:8088"
+    source: otel
+    sourcetype: otel_metrics
+    index: metrics
+
+service:
+  pipelines:
+    metrics:
+      receivers: [hostmetrics]
+      exporters: [splunk_hec]

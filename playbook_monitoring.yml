@@ -1,0 +1,20 @@
+- name: Configure Forgejo monitoring
+  hosts: forgejo
+  become: yes
+  roles:
+    - splunk_forwarder
+    - otel
+
+- name: Configure Forgejo2 monitoring
+  hosts: forgejo
+  become: yes
+  roles:
+    - splunk_forwarder
+    - otel
+
+- name: Configure db monitoring
+  hosts: db
+  become: yes
+  roles:
+    - splunk_forwarder
+    - otel

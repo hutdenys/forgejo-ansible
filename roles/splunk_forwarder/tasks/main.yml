@@ -1,0 +1,33 @@
+- name: Download Splunk Universal Forwarder .deb
+  get_url:
+    url: https://download.splunk.com/products/universalforwarder/releases/9.2.1/linux/splunkforwarder-9.2.1-cf2a3f0a0c5e-Linux-x86_64.deb
+    dest: /tmp/splunkforwarder.deb
+
+- name: Install Splunk Universal Forwarder
+  apt:
+    deb: /tmp/splunkforwarder.deb
+    state: present
+
+- name: Enable and start Splunk Forwarder
+  shell: /opt/splunkforwarder/bin/splunk start --accept-license --answer-yes --no-prompt
+  become_user: root
+
+- name: Copy Splunk inputs.conf
+  template:
+    src: inputs.conf.j2
+    dest: /opt/splunkforwarder/etc/system/local/inputs.conf
+    owner: splunk
+    group: splunk
+    mode: '0644'
+
+- name: Copy Splunk outputs.conf
+  template:
+    src: outputs.conf.j2
+    dest: /opt/splunkforwarder/etc/system/local/outputs.conf
+    owner: splunk
+    group: splunk
+    mode: '0644'
+
+- name: Restart Splunk Forwarder
+  shell: /opt/splunkforwarder/bin/splunk restart
+  become_user: splunk

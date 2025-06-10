@@ -1,0 +1,27 @@
+- name: Download otelcol-contrib .deb package
+  get_url:
+    url: https://github.com/open-telemetry/opentelemetry-collector-releases/releases/download/v0.96.0/otelcol-contrib_0.96.0_linux_amd64.deb
+    dest: /tmp/otelcol-contrib_0.96.0.deb
+
+- name: Install otelcol-contrib package
+  apt:
+    deb: /tmp/otelcol-contrib_0.96.0.deb
+    state: present
+
+- name: Create otelcol config directory if it doesn't exist
+  file:
+    path: /etc/otelcol
+    state: directory
+    mode: '0755'
+
+- name: Copy otelcol-contrib config.yaml
+  copy:
+    src: config.yaml
+    dest: /etc/otelcol/config.yaml
+    mode: '0644'
+
+- name: Enable and start otelcol-contrib service
+  systemd:
+    name: otelcol-contrib
+    enabled: yes
+    state: started
